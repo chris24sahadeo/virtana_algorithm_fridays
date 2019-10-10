@@ -2,41 +2,52 @@ class Decompressor:
 
   def __init__(self, compressed_string):
     self.compressed_string = compressed_string
+    self.current_index = 0
 
-  def get_number(self, i):
-    j = i
-    while self.compressed_string[j].isdigit():
-      j+=1
-    return j+1, int(self.compressed_string[i:j-1])
+  def get_number(self):
+    starting_index = self.current_index
+    while self.compressed_string[self.current_index].isdigit():
+      self.current_index+=1
+    return int(self.compressed_string[starting_index:self.current_index])
   
-  def get_inner_string(self, i):
-    j = i
-    while self.compressed_string[j].isalpha():
-      j+=i
-    return j+1, self.compressed_string[i:j-1]
+  def get_inner_string(self):
+    starting_index = self.current_index
+    while self.compressed_string[self.current_index].isalpha():
+      self.current_index+=1
+    return self.compressed_string[starting_index:self.current_index]
   
-  def decompress(self, i):
-    # if end of final string
-    if i == len(self.compressed_string)-1:
+  def decompress(self):
+    # if end of final string then return empty string
+    if self.current_index >= len(self.compressed_string):
       return ''
 
-    # if ']'
-    if self.compressed_string[i] == ']':
-      self.decompress(i+1)
+    # if ']' then return empty string
+    if self.compressed_string[self.current_index] == ']':
+      self.current_index += 1
+      return ''
     
-    # if digit then get number and advance to next section skipping the '['
-    if self.compressed_string[i].isdigit():
-      i, number = self.get_number(i)
-      return i, number*self.decompress(i)
+    # if digit then get number and advance to next nested string, check for trailing string and skipping the '['
+    if self.compressed_string[self.current_index].isdigit():
+      number = self.get_number() 
+      self.current_index+=1
+      return number*self.decompress()+self.decompress()
     
     # if character then return inner string and advance skipping the ']'
-    if self.compressed_string[i].isalpha():
-      i, inner_string = self.get_inner_string(i)
+    if self.compressed_string[self.current_index].isalpha():
+      inner_string = self.get_inner_string()
+      self.current_index+=1      
       return inner_string
 
   def decompress_all(self):
+    # ensures non recursive pieces are solved too 
+
     final_string = ''
-    for i in range(len(self.compressed_string)):
-      i, inner_string = self.decompress(i)
-      final_string += inner_string
+
+    # for i in range(len(self.compressed_string)):
+    #   i, inner_string = self.decompress(i)
+    #   final_string += inner_string
+
+    while self.current_index < len(self.compressed_string):
+      final_string += self.decompress()
+    
     return final_string
